@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Delivery Checker</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+    <!-- This is our custom element  -->
+    <delivery-checker></delivery-checker>
+
+    <script>
+        class deliveryChecker extends HTMLElement {
+            connectedCallback() {
+                this.innerHTML = `
+            <span class="title"> DELIVERY DETAILS </span>
+            <div class="search-field">
+                <div class="input-field">
+                    <input type="text" id="numberInput" name="numberInput" pattern="[0-9]{6}" minlength="6" maxlength="6"
+                        title="Enter your 6-digit area code" oninput="restrictToNumbers(this)" onclick="clearInput(this)" />
+                    <span class="search-btn" onclick="checkDelivery()"> > </span>
+                </div>
+                <div class="result">
+                    <span> Estimated delivery </span>
+                    <span class="result-text"> Area not Serviceable </span>
+                </div>
+            </div>
+            <span><i>This input will not accept character other than a number </i></span>
+            `;
+            }
+        }
+
+        customElements.define("delivery-checker", deliveryChecker);
+
+        const delivery_checker = document.querySelector("delivery-checker"),
+            resultDiv = document.querySelector(".result"),
+            resultText = document.querySelector(".result-text");
+
+        function restrictToNumbers(inputElement) {
+            inputElement.value = inputElement.value.replace(/[^0-9]/g, "");
+        }
+
+        // Function to clear the input value
+        function clearInput(inputElement) {
+            inputElement.value = "";
+        }
+
+        // Your JavaScript code here
+        console.log("Document is fully loaded and ready to go!");
+
+        function formatDate(day) {
+            const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+            const months = [
+                "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+            ];
+            const currentDate = new Date();
+            const deliveryDate = new Date(currentDate);
+            deliveryDate.setDate(currentDate.getDate() + day + 1);
+            const formattedDate = `${days[deliveryDate.getDay()]}, ${deliveryDate.getDate()} ${months[deliveryDate.getMonth()]}`;
+            return formattedDate;
+        }
+
+        // Function to check delivery
+        async function checkDelivery() {
+            try {
+                // Fetch data from data.json
+
+               const userInput = document.getElementById("numberInput").value; // Using ID for better selection
+                const response = await fetch("data.json");
+
+                if (!response.ok) {
+                    throw new Error("Network response was not ok");
+                }
+
+                const data = await response.json();
+                const deliveryLocations = data.deliveryLocations;
+
+                // Check if user input is present in the data
+                const location = deliveryLocations.find(
+                    (item) => item.pincode == userInput
+                );
+
+                if (location) {
+                    const estimatedDeliveryDays = parseInt(location.estimatedDeliveryDays);
+                    resultText.style.color = "green";
+                    resultText.textContent = formatDate(estimatedDeliveryDays);
+                } else {
+                    resultText.style.color = "red";
+                    resultText.textContent = "Area not Serviceable";
+                }
+
+                resultDiv.style.display = "flex";
+            } catch (error) {
+                console.error("Error fetching data:", error);
+            }
+        }
+    </script>
+
+</body>
+
+</html>
